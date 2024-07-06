@@ -1,0 +1,63 @@
+#include <iostream>
+#include "MYLServer.hpp"
+
+MYLServer::MYLServer(boost::asio::io_context& io_context, short port) 
+    : m_acceptor(io_context, tcp::endpoint(tcp::v4(), port)) {
+    // wait for clients
+    DoAccept();
+}
+
+void MYLServer::DoAccept() {
+    // this is an async accept which means the lambda function is 
+    // executed, when a client connects
+    m_acceptor.async_accept([this](boost::system::error_code ec, tcp::socket socket) {
+        if (!ec) {
+            // let's see where we created our session
+            std::cout << "creating session on: " 
+                << socket.remote_endpoint().address().to_string() 
+                << ":" << socket.remote_endpoint().port() << '\n';
+            // create a session where we immediately call the run function
+            // note: the socket is passed to the lambda here
+            std::make_shared<MYLSession>(std::move(socket))->Run();
+        } else {
+            std::cout << "error: " << ec.message() << std::endl;
+        }
+        // since we want multiple clients to connnect, wait for the next one by calling do_accept()
+        DoAccept();
+    });
+}
+
+MYLSession::MYLSession(tcp::socket socket)
+    : m_socket(std::move(socket)) {
+        
+}
+
+void MYLSession::Run() {
+    WaitForRequest();
+}
+
+void MYLSession::WaitForRequest() {
+    // since we capture `this` in the callback, we need to call shared_from_this()
+    auto self(shared_from_this());
+    // and now call the lambda once data arrives
+    // we read a string until the null termination character
+    asio::async_read_until(m_socket, m_buffer, "\0", 
+    [this, self](boost::system::error_code ec, std::size_t /*length*/)
+    {
+        // if there was no error, everything went well and for this demo
+        // we print the data to stdout and wait for the next request
+        if (!ec)  {
+            std::string data{
+                std::istreambuf_iterator<char>(&m_buffer), 
+                std::istreambuf_iterator<char>() 
+            };
+            // we just print the data, you can here call other api's 
+            // or whatever the server needs to do with the received data
+            std::cout << data << std::endl;
+            WaitForRequest();
+        } else {
+            std::cout << "error: " << ec << std::endl;;
+        }
+    });
+}
+
