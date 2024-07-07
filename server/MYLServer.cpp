@@ -48,8 +48,6 @@ void MYLSession::waitForRequest() {
             // if there was no error, everything went well and for this demo
             // we print the data to stdout and wait for the next request
             if (!ec)  {
-                std::cout << "New message recieved" << std::endl;
-
                 std::string data{
                     std::istreambuf_iterator<char>(&m_buffer), 
                     std::istreambuf_iterator<char>() 
@@ -57,13 +55,6 @@ void MYLSession::waitForRequest() {
 
                 // append read data from socket to internal persistent buffer
                 m_bufferData += data;
-
-                std::cout << m_bufferData << std::endl;
-
-                if (data[data.length() - 1] != '\n')
-                {
-                    std::cout << "partial message recieved :( with length " << length << std::endl;
-                }
 
                 processRecievedData();
 
@@ -88,10 +79,10 @@ void MYLSession::processRecievedData()
         std::string line = m_bufferData.substr(start_pos, to - start_pos);
         start_pos = to + 1;
 
-        std::cout << "Processing line:" << std::endl;
-        std::cout << line << std::endl;
-
-        m_trackDataHandler->handleEvent(line);
+        auto reply = m_trackDataHandler->handleEvent(line);
+        if (!reply.empty()) {
+             asio::write(m_socket, asio::buffer(reply, reply.length()));
+        }
     }
 
     m_bufferData.erase(0, start_pos);   

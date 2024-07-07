@@ -6,7 +6,7 @@ public:
     explicit MYLEventHandler(std::shared_ptr<Track> trackData);
     ~MYLEventHandler() = default;
 
-    void handleEvent(std::string_view messages);
+    std::string handleEvent(std::string_view messages);
 
 private:
     std::shared_ptr<Track> m_trackData;

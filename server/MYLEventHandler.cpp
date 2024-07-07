@@ -39,14 +39,15 @@ MYLEventHandler::MYLEventHandler(std::shared_ptr<Track> trackData)
     : m_trackData(trackData) {
 }
 
-void MYLEventHandler::handleEvent(std::string_view messages)
+std::string MYLEventHandler::handleEvent(std::string_view messages)
 {
-    // parsing every new line as a separate json event message
+    // parsing every new line as a separate json event message and collecting possible responses
+    std::string response;
+
     std::string line;
     std::istringstream input;
     input.str(std::string(messages));
     while(std::getline(input, line)) {
-        std::cout << "non-parsed line: " << line << std::endl;
         json j;
 
         try
@@ -55,6 +56,7 @@ void MYLEventHandler::handleEvent(std::string_view messages)
         }
         catch(const std::exception& e)
         {
+            // we skip lines with parsing errors, but processing till the end of the stream
             std::cerr << e.what() << '\n';
             continue;
         }
@@ -74,7 +76,8 @@ void MYLEventHandler::handleEvent(std::string_view messages)
                     json reply;
                     reply["method"] = j["method"];
                     reply["result"] = toJson(lapsData);
-                    std::cout << reply.dump() << std::endl;
+                    std::cout << "Response: " << reply.dump() << std::endl;
+                    response += reply.dump() + '\n';
                 }
                 else {
                     std::cout << "Get total lap stats" << std::endl;
@@ -82,7 +85,8 @@ void MYLEventHandler::handleEvent(std::string_view messages)
                     json reply;
                     reply["method"] = j["method"];
                     reply["result"] = toJson(totalLapsData);
-                    std::cout << reply.dump() << std::endl;
+                    std::cout << "Response: " << reply.dump() << std::endl;
+                    response += reply.dump() + '\n';
                 }
             }
         }
@@ -90,5 +94,7 @@ void MYLEventHandler::handleEvent(std::string_view messages)
             std::cout << "Incorrect message format" << std::endl;
         }
     }
+
+    return response;
 }
 

@@ -1,7 +1,7 @@
 CXX = g++
 CFLAGS = -Wall -g
 
-CLIENT_SRC = main.cpp client.cpp
+CLIENT_SRC = main.cpp
 CLIENT_OBJ = $(subst .cpp,.o,$(CLIENT_SRC))
 CLIENT_BIN = ml_client
 

@@ -1,8 +1,4 @@
 #include <chrono>
-#include <time.h>
-#include <iomanip>
-#include <sstream>
-#include <iostream>
 #include <algorithm>
 #include "track.hpp"
 
@@ -37,10 +33,8 @@ DriverStats Track::getDriverStats(const std::string& driverId) const {
             prevTimeMark = oneDetection.timePoint;
         }
         else {
-            std::cout << oneDetection.timeMark << std::endl;
             const auto diff = oneDetection.timePoint - prevTimeMark;
             const auto currentLapSec = std::chrono::round<std::chrono::seconds>(diff).count();
-            std::cout << currentLapSec << std::endl;
             stats.totalTime += currentLapSec;
             stats.averageLap = stats.totalTime / stats.lapsTotal;
             if (stats.lapsTotal == 1 || currentLapSec < stats.bestLap) {
@@ -54,9 +48,6 @@ DriverStats Track::getDriverStats(const std::string& driverId) const {
     }
 
     stats.lapsTotal -= 1; // correct to the right number of laps
-
-    std::cout << stats.averageLap << std::endl;
-    std::cout << stats.bestLap << std::endl;
 
     return stats;
 }
