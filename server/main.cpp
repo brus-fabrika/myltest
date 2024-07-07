@@ -18,7 +18,7 @@ int main() {
     auto trackData = std::make_shared<Track>();
     auto eventHandler = std::make_shared<MYLEventHandler>(trackData);
 
-    server.SetTrackDataHandler(eventHandler);
+    server.setTrackDataHandler(eventHandler);
 
     std::cout << "Starting the server" << std::endl;
 

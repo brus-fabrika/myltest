@@ -5,10 +5,10 @@
 MYLServer::MYLServer(boost::asio::io_context& io_context, short port) 
     : m_acceptor(io_context, tcp::endpoint(tcp::v4(), port)) {
     // wait for clients
-    DoAccept();
+    doAccept();
 }
 
-void MYLServer::DoAccept() {
+void MYLServer::doAccept() {
     // this is an async accept which means the lambda function is 
     // executed, when a client connects
     m_acceptor.async_accept([this](boost::system::error_code ec, tcp::socket socket) {
@@ -20,12 +20,12 @@ void MYLServer::DoAccept() {
             // create a session where we immediately call the run function
             // the socket is passed to the lambda here
             auto newConnection = std::make_shared<MYLSession>(std::move(socket), m_trackDataHandler);
-            newConnection->Run();
+            newConnection->run();
         } else {
             std::cout << "error: " << ec.message() << std::endl;
         }
         // since we want multiple clients to connnect, wait for the next one by calling doAccept()
-        DoAccept();
+        doAccept();
     });
 }
 
@@ -34,11 +34,11 @@ MYLSession::MYLSession(tcp::socket socket, std::shared_ptr<MYLEventHandler> even
         
 }
 
-void MYLSession::Run() {
-    WaitForRequest();
+void MYLSession::run() {
+    waitForRequest();
 }
 
-void MYLSession::WaitForRequest() {
+void MYLSession::waitForRequest() {
     // since we capture `this` in the callback, we need to call shared_from_this()
     auto self(shared_from_this());
     // and now call the lambda once data arrives
@@ -65,9 +65,9 @@ void MYLSession::WaitForRequest() {
                     std::cout << "partial message recieved :( with length " << length << std::endl;
                 }
 
-                ProcessRecievedData();
+                processRecievedData();
 
-                WaitForRequest();
+                waitForRequest();
             } else {
                 std::cout << "error: " << ec << std::endl;;
             }
@@ -75,7 +75,7 @@ void MYLSession::WaitForRequest() {
     );
 }
 
-void MYLSession::ProcessRecievedData()
+void MYLSession::processRecievedData()
 {
     // we process all data from persistent buffer while there are full lines delimeted with '\n'
     // what is left will be processed on the next read iterations
@@ -91,7 +91,7 @@ void MYLSession::ProcessRecievedData()
         std::cout << "Processing line:" << std::endl;
         std::cout << line << std::endl;
 
-        m_trackDataHandler->HandleEvent(line);
+        m_trackDataHandler->handleEvent(line);
     }
 
     m_bufferData.erase(0, start_pos);   

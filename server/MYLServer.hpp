@@ -14,12 +14,12 @@ class MYLServer
 public:
     // we need an io_context and a port where we listen to 
     MYLServer(asio::io_context& io_context, short port); 
-    void SetTrackDataHandler(std::shared_ptr<MYLEventHandler> trackDataHandler) {
+    void setTrackDataHandler(std::shared_ptr<MYLEventHandler> trackDataHandler) {
         m_trackDataHandler = trackDataHandler;
     }
 
 private:
-    void DoAccept();
+    void doAccept();
 
 private: 
     tcp::acceptor m_acceptor;
@@ -34,11 +34,11 @@ public:
     virtual ~MYLSession() = default;
 
     // and run was already called in our server, where we just wait for requests
-    void Run();
+    void run();
 
 private:
-    void WaitForRequest();
-    void ProcessRecievedData();
+    void waitForRequest();
+    void processRecievedData();
 
 private:
     tcp::socket m_socket;

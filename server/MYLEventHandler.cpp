@@ -10,14 +10,12 @@ std::chrono::system_clock::time_point convertFromString(const std::string& timeS
     tm tm;
     std::istringstream ss(timeString);
     ss >> std::get_time(&tm, timeFormat.c_str());
-    time_t date = mktime(&tm);
+    tm.tm_mday = 1; tm.tm_mon = 0; tm.tm_year = 100; // this is to prevent random dates generated...
 
-    // Output the parsed date using std::asctime
-    std::cout << "Date: " << asctime(localtime(&date));
-    return std::chrono::system_clock::from_time_t(date);
+    return std::chrono::system_clock::from_time_t(mktime(&tm));
 }
 
-json to_json(const DriverStats& ds) {
+json toJson(const DriverStats& ds) {
     return json {
             {"driver_id", ds.driverId},
             {"total_time", ds.totalTime},
@@ -28,21 +26,20 @@ json to_json(const DriverStats& ds) {
     };
 }
 
-json to_json(const TotalDriverStats& tds) {
+json toJson(const TotalDriverStats& tds) {
     json j = json::array();
     
     for (auto driverStats: tds) {
-        j.emplace_back(to_json(driverStats));
+        j.emplace_back(toJson(driverStats));
     }
     return j;
 }
 
 MYLEventHandler::MYLEventHandler(std::shared_ptr<Track> trackData)
     : m_trackData(trackData) {
-
 }
 
-void MYLEventHandler::HandleEvent(std::string_view messages)
+void MYLEventHandler::handleEvent(std::string_view messages)
 {
     // parsing every new line as a separate json event message
     std::string line;
@@ -76,7 +73,7 @@ void MYLEventHandler::HandleEvent(std::string_view messages)
                     auto lapsData = m_trackData->getDriverStats(j["driver_id"]);
                     json reply;
                     reply["method"] = j["method"];
-                    reply["result"] = to_json(lapsData);
+                    reply["result"] = toJson(lapsData);
                     std::cout << reply.dump() << std::endl;
                 }
                 else {
@@ -84,7 +81,7 @@ void MYLEventHandler::HandleEvent(std::string_view messages)
                     auto totalLapsData = m_trackData->getTotalStats();
                     json reply;
                     reply["method"] = j["method"];
-                    reply["result"] = to_json(totalLapsData);
+                    reply["result"] = toJson(totalLapsData);
                     std::cout << reply.dump() << std::endl;
                 }
             }

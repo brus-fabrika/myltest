@@ -71,6 +71,9 @@ TotalDriverStats Track::getTotalStats() const {
         totalStats.emplace_back(getDriverStats(driverId));
     }
     std::sort(totalStats.begin(), totalStats.end(), [](const DriverStats& a, const DriverStats& b) {return a.bestLap < b.bestLap;});
+    for (size_t i = 1; i < totalStats.size(); ++i) {
+        totalStats[i].winLapDiff = totalStats[i].bestLap - totalStats[0].bestLap;
+    }
 
     return totalStats;
 }
