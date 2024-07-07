@@ -6,6 +6,7 @@
 
 using json = nlohmann::ordered_json;
 
+// helper function to convert time string into std time representation
 std::chrono::system_clock::time_point convertFromString(const std::string& timeString, const std::string& timeFormat) {
     tm tm;
     std::istringstream ss(timeString);
@@ -15,6 +16,7 @@ std::chrono::system_clock::time_point convertFromString(const std::string& timeS
     return std::chrono::system_clock::from_time_t(mktime(&tm));
 }
 
+// DriverStats to json conversion function
 json toJson(const DriverStats& ds) {
     return json {
             {"driver_id", ds.driverId},
@@ -26,6 +28,7 @@ json toJson(const DriverStats& ds) {
     };
 }
 
+// TotalDriverStats to json conversion function
 json toJson(const TotalDriverStats& tds) {
     json j = json::array();
     
@@ -39,9 +42,9 @@ MYLEventHandler::MYLEventHandler(std::shared_ptr<Track> trackData)
     : m_trackData(trackData) {
 }
 
+// handleEvent parses every line of message as a separate json event, processes and collects possible responses
 std::string MYLEventHandler::handleEvent(std::string_view messages)
 {
-    // parsing every new line as a separate json event message and collecting possible responses
     std::string response;
 
     std::string line;
@@ -56,7 +59,7 @@ std::string MYLEventHandler::handleEvent(std::string_view messages)
         }
         catch(const std::exception& e)
         {
-            // we skip lines with parsing errors, but processing till the end of the stream
+            // we skip lines with parsing errors, but process till the end of the stream
             std::cerr << e.what() << '\n';
             continue;
         }

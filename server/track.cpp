@@ -2,7 +2,9 @@
 #include <algorithm>
 #include "track.hpp"
 
+
 void Track::addDetection(const Detection& oneDetection) {
+    const std::lock_guard<std::recursive_mutex> lock(m_trackDataLock);
     m_trackData[oneDetection.driverId].emplace_back(oneDetection);
     notifyListeners();
 }
@@ -11,14 +13,16 @@ void Track::addDetection(Detection&& oneDetection) {
     addDetection(oneDetection);
 }
 
-std::vector<Detection> Track::getDriverLaps(const std::string& driverId) const {
+std::vector<Detection> Track::getDriverLaps(const std::string& driverId) {
+    const std::lock_guard<std::recursive_mutex> lock(m_trackDataLock);
     if (m_trackData.find(driverId) != m_trackData.end()) {
         return m_trackData.at(driverId);
     }
     return {};
 }
 
-DriverStats Track::getDriverStats(const std::string& driverId) const {
+DriverStats Track::getDriverStats(const std::string& driverId) {
+    const std::lock_guard<std::recursive_mutex> lock(m_trackDataLock);
     if (m_trackData.find(driverId) == m_trackData.end()) {
         return {};
     }
@@ -34,7 +38,7 @@ DriverStats Track::getDriverStats(const std::string& driverId) const {
         }
         else {
             const auto diff = oneDetection.timePoint - prevTimeMark;
-            const auto currentLapSec = std::chrono::round<std::chrono::seconds>(diff).count();
+            const size_t currentLapSec = std::chrono::round<std::chrono::seconds>(diff).count();
             stats.totalTime += currentLapSec;
             stats.averageLap = stats.totalTime / stats.lapsTotal;
             if (stats.lapsTotal == 1 || currentLapSec < stats.bestLap) {
@@ -52,7 +56,8 @@ DriverStats Track::getDriverStats(const std::string& driverId) const {
     return stats;
 }
 
-TotalDriverStats Track::getTotalStats() const {
+TotalDriverStats Track::getTotalStats() {
+    const std::lock_guard<std::recursive_mutex> lock(m_trackDataLock);
     if (m_trackData.empty()) {
         return {};
     }

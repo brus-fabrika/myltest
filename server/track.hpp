@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <chrono>
+#include <mutex>
 
 struct Detection {
     std::string driverId;
@@ -41,9 +42,8 @@ public:
     void addDetection(const Detection& oneDetection);
     void addDetection(Detection&& oneDetection);
 
-    std::vector<Detection> getDriverLaps(const std::string& driverId) const;
-    DriverStats getDriverStats(const std::string& driverId) const;
-    TotalDriverStats getTotalStats() const;
+    DriverStats getDriverStats(const std::string& driverId);
+    TotalDriverStats getTotalStats();
 
     void registerTrackListener(TrackDataListener* listener) {
         if (listener) {
@@ -60,6 +60,10 @@ public:
     }
 
 private:
+    std::vector<Detection> getDriverLaps(const std::string& driverId);
+
+private:
+    std::recursive_mutex m_trackDataLock;
     std::unordered_map<std::string, std::vector<Detection>> m_trackData;
     std::vector<TrackDataListener*> m_trackListeners;
 };
