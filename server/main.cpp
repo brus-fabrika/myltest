@@ -5,13 +5,20 @@
 
 namespace asio = boost::asio;
 
-int main() {
-    // here we create the io_context
-    asio::io_context io_context;
+class TrackDataHandler {
+public:
     
-    // we'll just use an arbitrary port here 
+};
+
+int main() {
+    asio::io_context io_context;
     MYLServer server(io_context, 25000);
     
+    auto trackData = std::make_shared<Track>();
+    auto eventHandler = std::make_shared<MYLEventHandler>(trackData);
+
+    server.SetTrackDataHandler(eventHandler);
+
     // and we run until our server is alive
     io_context.run();
 }

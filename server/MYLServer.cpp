@@ -1,4 +1,6 @@
 #include <iostream>
+#include <nlohmann/json.hpp>
+
 #include "MYLServer.hpp"
 
 MYLServer::MYLServer(boost::asio::io_context& io_context, short port) 
@@ -17,18 +19,19 @@ void MYLServer::DoAccept() {
                 << socket.remote_endpoint().address().to_string() 
                 << ":" << socket.remote_endpoint().port() << '\n';
             // create a session where we immediately call the run function
-            // note: the socket is passed to the lambda here
-            std::make_shared<MYLSession>(std::move(socket))->Run();
+            // the socket is passed to the lambda here
+            auto newConnection = std::make_shared<MYLSession>(std::move(socket), m_trackDataHandler);
+            newConnection->Run();
         } else {
             std::cout << "error: " << ec.message() << std::endl;
         }
-        // since we want multiple clients to connnect, wait for the next one by calling do_accept()
+        // since we want multiple clients to connnect, wait for the next one by calling doAccept()
         DoAccept();
     });
 }
 
-MYLSession::MYLSession(tcp::socket socket)
-    : m_socket(std::move(socket)) {
+MYLSession::MYLSession(tcp::socket socket, std::shared_ptr<MYLEventHandler> eventHandler)
+    : m_socket(std::move(socket)), m_trackDataHandler(eventHandler) {
         
 }
 
@@ -41,23 +44,86 @@ void MYLSession::WaitForRequest() {
     auto self(shared_from_this());
     // and now call the lambda once data arrives
     // we read a string until the null termination character
-    asio::async_read_until(m_socket, m_buffer, "\0", 
-    [this, self](boost::system::error_code ec, std::size_t /*length*/)
-    {
-        // if there was no error, everything went well and for this demo
-        // we print the data to stdout and wait for the next request
-        if (!ec)  {
-            std::string data{
-                std::istreambuf_iterator<char>(&m_buffer), 
-                std::istreambuf_iterator<char>() 
-            };
-            // we just print the data, you can here call other api's 
-            // or whatever the server needs to do with the received data
-            std::cout << data << std::endl;
-            WaitForRequest();
-        } else {
-            std::cout << "error: " << ec << std::endl;;
+    asio::async_read_until(m_socket, m_buffer, "\n", 
+        [this, self](boost::system::error_code ec, std::size_t length) {
+            // if there was no error, everything went well and for this demo
+            // we print the data to stdout and wait for the next request
+            if (!ec)  {
+                std::cout << "New message recieved" << std::endl;
+
+                std::string data{
+                    std::istreambuf_iterator<char>(&m_buffer), 
+                    std::istreambuf_iterator<char>() 
+                };
+
+                // append read data from socket to internal persistent buffer
+                m_bufferData += data;
+
+                std::cout << m_bufferData << std::endl;
+
+                if (data[data.length() - 1] != '\n')
+                {
+                    std::cout << "partial message recieved :( with length " << length << std::endl;
+                }
+
+                ProcessRecievedData();
+
+                WaitForRequest();
+            } else {
+                std::cout << "error: " << ec << std::endl;;
+            }
         }
-    });
+    );
 }
+
+void MYLSession::ProcessRecievedData()
+{
+    // we process all data from persistent buffer while there are full lines delimeted with '\n'
+    // what is left will be processed on the next read iterations
+
+    size_t start_pos = 0;
+    size_t to = 0;
+    
+    while ((to = m_bufferData.find('\n', start_pos)) != std::string::npos)
+    {
+        std::string line = m_bufferData.substr(start_pos, to - start_pos);
+        start_pos = to + 1;
+
+        std::cout << "Processing line:" << std::endl;
+        std::cout << line << std::endl;
+
+        m_trackDataHandler->HandleEvent(line);
+    }
+
+    m_bufferData.erase(0, start_pos);   
+}
+
+MYLEventHandler::MYLEventHandler(std::shared_ptr<Track> trackData)
+    : m_trackData(trackData) {
+
+}
+
+void MYLEventHandler::HandleEvent(std::string_view messages)
+{
+    // parsing every new line as a separate json event message
+    using json = nlohmann::json;
+
+    std::string line;
+    std::istringstream input;
+    input.str(std::string(messages));
+    while(std::getline(input, line)) {
+        std::cout << "non-parsed line: " << line << std::endl;
+        json j = json::parse(line);
+        if (j.contains("method")){
+            //std::string method = j["method"];
+            if (j["method"] == "lap_event") {
+                std::cout << "New lap event for driver " << j["driver_id"] << " and time " << j["time"] << std::endl;
+            }
+        }
+        else {
+            std::cout << "Incorrect message format" << std::endl;
+        }
+    }
+}
+
 
