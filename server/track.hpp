@@ -1,9 +1,20 @@
 #pragma once
 #include <vector>
+#include <string>
+#include <unordered_map>
 #include <memory>
 
 struct Detection {
+    std::string driverId;
+    std::string timeMark;
+};
 
+struct DriverStats {
+    size_t lapsTotal = 0;
+    size_t totalTime = 0;
+    size_t bestLap = 0;
+    size_t averageLap = 0;
+    size_t winLapDiff = 0;
 };
 
 class TrackDataListener {
@@ -13,7 +24,9 @@ public:
 
 class Track {
 private:
-    std::vector<Detection> m_trackData;
+    std::unordered_map<std::string, std::vector<std::string>> m_trackData;
+
+    //std::vector<Detection> m_trackData;
 
     double m_sumVelocity = 0;
     double m_sumSlope = 0;
@@ -32,9 +45,8 @@ public:
     void addDetection(const Detection& oneDetection);
     void addDetection(Detection&& oneDetection);
 
-    size_t size() const {
-        return m_trackData.size();
-    }
+    std::vector<std::string> getDriverLaps(const std::string& driverId) const;
+    DriverStats getDriverStats(const std::string& driverId) const;
 
     void registerTrackListener(TrackDataListener* listener) {
         if (listener) {

@@ -1,7 +1,6 @@
 #include <iostream>
-#include <nlohmann/json.hpp>
-
 #include "MYLServer.hpp"
+#include "MYLEventHandler.hpp"
 
 MYLServer::MYLServer(boost::asio::io_context& io_context, short port) 
     : m_acceptor(io_context, tcp::endpoint(tcp::v4(), port)) {
@@ -96,34 +95,6 @@ void MYLSession::ProcessRecievedData()
     }
 
     m_bufferData.erase(0, start_pos);   
-}
-
-MYLEventHandler::MYLEventHandler(std::shared_ptr<Track> trackData)
-    : m_trackData(trackData) {
-
-}
-
-void MYLEventHandler::HandleEvent(std::string_view messages)
-{
-    // parsing every new line as a separate json event message
-    using json = nlohmann::json;
-
-    std::string line;
-    std::istringstream input;
-    input.str(std::string(messages));
-    while(std::getline(input, line)) {
-        std::cout << "non-parsed line: " << line << std::endl;
-        json j = json::parse(line);
-        if (j.contains("method")){
-            //std::string method = j["method"];
-            if (j["method"] == "lap_event") {
-                std::cout << "New lap event for driver " << j["driver_id"] << " and time " << j["time"] << std::endl;
-            }
-        }
-        else {
-            std::cout << "Incorrect message format" << std::endl;
-        }
-    }
 }
 
 

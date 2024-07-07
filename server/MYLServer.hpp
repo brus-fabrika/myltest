@@ -1,21 +1,13 @@
-#include <string_view>
+#pragma once
+
 #include <memory>
 #include <boost/asio.hpp>
-#include "track.hpp"
+
 
 namespace asio = boost::asio;
 using boost::asio::ip::tcp;
 
-class MYLEventHandler {
-public:
-    explicit MYLEventHandler(std::shared_ptr<Track> trackData);
-    ~MYLEventHandler() = default;
-
-    void HandleEvent(std::string_view messages);
-
-private:
-    std::shared_ptr<Track> m_trackData;
-};
+class MYLEventHandler;
 
 class MYLServer
 {
@@ -47,7 +39,7 @@ public:
 private:
     void WaitForRequest();
     void ProcessRecievedData();
-    
+
 private:
     tcp::socket m_socket;
     asio::streambuf m_buffer;

@@ -2,6 +2,7 @@
 #include <boost/asio.hpp>
 
 #include "MYLServer.hpp"
+#include "MYLEventHandler.hpp"
 
 namespace asio = boost::asio;
 
@@ -18,6 +19,8 @@ int main() {
     auto eventHandler = std::make_shared<MYLEventHandler>(trackData);
 
     server.SetTrackDataHandler(eventHandler);
+
+    std::cout << "Starting the server" << std::endl;
 
     // and we run until our server is alive
     io_context.run();

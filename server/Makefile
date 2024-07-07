@@ -1,7 +1,7 @@
 CXX = g++
 CFLAGS = -Wall -g
 
-SERVER_SRC = main.cpp MYLServer.cpp
+SERVER_SRC = main.cpp MYLServer.cpp MYLEventHandler.cpp track.cpp
 SERVER_OBJ = $(subst .cpp,.o,$(SERVER_SRC))
 SERVER_BIN = ml_server
 
