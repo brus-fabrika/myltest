@@ -2,14 +2,18 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <map>
 #include <memory>
+#include <chrono>
 
 struct Detection {
     std::string driverId;
     std::string timeMark;
+    std::chrono::system_clock::time_point timePoint;
 };
 
 struct DriverStats {
+    std::string driverId;
     size_t lapsTotal = 0;
     size_t totalTime = 0;
     size_t bestLap = 0;
@@ -17,22 +21,14 @@ struct DriverStats {
     size_t winLapDiff = 0;
 };
 
+using TotalDriverStats = std::vector<DriverStats>;
+
 class TrackDataListener {
 public:
     virtual void onTrackDataUpdate() = 0;
 };
 
 class Track {
-private:
-    std::unordered_map<std::string, std::vector<std::string>> m_trackData;
-
-    //std::vector<Detection> m_trackData;
-
-    double m_sumVelocity = 0;
-    double m_sumSlope = 0;
-
-    std::vector<TrackDataListener*> m_trackListeners;
-
 public:
     Track() = default;
     ~Track() = default;
@@ -45,8 +41,9 @@ public:
     void addDetection(const Detection& oneDetection);
     void addDetection(Detection&& oneDetection);
 
-    std::vector<std::string> getDriverLaps(const std::string& driverId) const;
+    std::vector<Detection> getDriverLaps(const std::string& driverId) const;
     DriverStats getDriverStats(const std::string& driverId) const;
+    TotalDriverStats getTotalStats() const;
 
     void registerTrackListener(TrackDataListener* listener) {
         if (listener) {
@@ -61,4 +58,8 @@ public:
             }
         }
     }
+
+private:
+    std::unordered_map<std::string, std::vector<Detection>> m_trackData;
+    std::vector<TrackDataListener*> m_trackListeners;
 };
